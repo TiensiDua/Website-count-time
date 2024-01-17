@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Đồng hồ đếm giờ </title>
+    <link rel="icon" type="image/ x-icon" href="mon.ico" />
+
+    <style>
+      html {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+      }
+
+      body {
+        margin: 0;
+        padding: 0;
+        min-height: 100%;
+        background-image: url("anh (6).jpg");
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        text-align: center;
+        font-family: Arial, sans-serif;
+      }
+
+      #timer {
+        font-size: 48px;
+        margin-top: 20px;
+      }
+
+      button {
+        margin-top: 10px;
+        font-size: 20px;
+        padding: 10px;
+      }
+
+      #money {
+        font-size: 40px;
+        margin-top: 45px;
+        color: rgb(223, 74, 15);
+      }
+
+      .text-bold {
+        font-weight: bold;
+      }
+
+      #amount {
+        font-weight: bold;
+      }
+
+      #hour,
+      #minute,
+      #second {
+        color: rgb(0, 0, 0); /* Thay đổi màu sắc ở đây */
+      }
+
+      .coin-image {
+        width: 36px; /* Điều chỉnh kích thước theo ý muốn */
+        height: auto; /* Duy trì tỷ lệ hình ảnh */
+        vertical-align: middle; /* Căn chỉnh hình ảnh với văn bản */
+      }
+    </style>
+  </head>
+  <body>
+    <div id="timer">
+      <span id="hour">00</span>:<span id="minute">00</span>:<span id="second"
+        >00</span
+      >
+    </div>
+    <button id="startStopBtn">Bắt đầu</button>
+    <button id="pauseBtn" disabled>Tạm dừng</button>
+    <button id="resetBtn">Reset</button>
+    <div id="money">
+      Số tiền: <span id="amount">0</span>
+      <img src="xu.png" alt="đồng xu" class="coin-image" />
+    </div>
+
+    <script>
+      let jobName;
+      let dataFile = null;
+      let hour = 0;
+      let minute = 0;
+      let second = 0;
+      let interval = null;
+      let amount = 0;
+
+      document.addEventListener("DOMContentLoaded", function () {
+        jobName = prompt("Bạn đang làm công việc gì?");
+        if (jobName) {
+          document.title = jobName; // Cập nhật tiêu đề trang web (nếu bạn muốn)
+        }
+      });
+
+      function pad(number) {
+        return number < 10 ? "0" + number : number;
+      }
+
+      function updateDisplay() {
+        document.getElementById("hour").textContent = pad(hour);
+        document.getElementById("minute").textContent = pad(minute);
+        document.getElementById("second").textContent = pad(second);
+      }
+
+      function updateAmountDisplay() {
+        document.getElementById("amount").textContent = amount;
+      }
+
+      function updateTimer() {
+        second++;
+        if (second >= 60) {
+          second = 0;
+          minute++;
+        }
+        if (minute >= 60) {
+          minute = 0;
+          hour++;
+        }
+        if (second % 10 === 0) {
+          amount += 1; // Tăng số tiền sau mỗi n giây
+        }
+        updateDisplay();
+        updateAmountDisplay();
+      }
+
+      document
+        .getElementById("startStopBtn")
+        .addEventListener("click", function () {
+          if (interval) {
+            clearInterval(interval);
+            interval = null;
+            this.textContent = "Bắt đầu";
+            document.getElementById("pauseBtn").disabled = true;
+          } else {
+            interval = setInterval(updateTimer, 1000);
+            this.textContent = "Dừng lại";
+            document.getElementById("pauseBtn").disabled = false;
+
+            // Tạo file dữ liệu
+            var data =
+              "Thời gian: " +
+              pad(hour) +
+              ":" +
+              pad(minute) +
+              ":" +
+              pad(second) +
+              "\n" +
+              "Số tiền: " +
+              amount +
+              " đồng";
+            dataFile = new Blob([data], { type: "text/plain" });
+          }
+        });
+
+      document
+        .getElementById("pauseBtn")
+        .addEventListener("click", function () {
+          if (interval) {
+            clearInterval(interval);
+            interval = null;
+            document.getElementById("startStopBtn").textContent = "Tiếp tục";
+          }
+        });
+
+      document
+        .getElementById("resetBtn")
+        .addEventListener("click", function () {
+          if (interval) {
+            clearInterval(interval);
+            interval = null;
+          }
+
+          var now = new Date();
+          var dateString =
+            now.getDate() +
+            "-" +
+            (now.getMonth() + 1) +
+            "-" +
+            now.getFullYear();
+          var timeString = now.getHours() + ":" + now.getMinutes();
+          var fileName = jobName
+            ? jobName.replace(/\s+/g, "_") + "_" + dateString
+            : "data.txt"; // Thay thế khoảng trắng bằng dấu gạch dưới
+
+          // Tạo file dữ liệu với dữ liệu cập nhật
+          var data =
+            "Thời gian: " +
+            pad(hour) +
+            ":" +
+            pad(minute) +
+            ":" +
+            pad(second) +
+            "\nSố tiền: " +
+            amount +
+            " đồng" +
+            "\nNgày tải xuống: " +
+            dateString +
+            "\nGiờ tải xuống: " +
+            timeString;
+          dataFile = new Blob([data], { type: "text/plain" });
+
+          // Reset các biến thời gian và số tiền
+          hour = 0;
+          minute = 0;
+          second = 0;
+          amount = 0;
+
+          updateDisplay();
+          updateAmountDisplay();
+
+          document.getElementById("startStopBtn").textContent = "Bắt đầu";
+          document.getElementById("pauseBtn").disabled = true;
+
+          // Tải xuống file dữ liệu
+          if (dataFile) {
+            var downloadLink = document.createElement("a");
+            downloadLink.download = fileName;
+            downloadLink.href = window.URL.createObjectURL(dataFile);
+            downloadLink.style.display = "none";
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            document.body.removeChild(downloadLink);
+            dataFile = null; // Reset biến file
+          }
+        });
+    </script>
+  </body>
+</html>
